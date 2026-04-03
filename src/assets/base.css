@@ -1,0 +1,33 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --arcade-bg: #08080f;
+  --arcade-platform: #4a9eff;
+  --arcade-platform-highlight: #7dc4ff;
+  --arcade-platform-shadow: #2a6abf;
+  --arcade-ladder: #ffdd44;
+  --arcade-text: #ffffff;
+  --arcade-accent: #ff6b4a;
+  --arcade-glow: #4a9eff;
+  --arcade-font: 'Press Start 2P', monospace;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: var(--arcade-font);
+}

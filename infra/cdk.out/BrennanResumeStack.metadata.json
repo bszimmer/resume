@@ -1,0 +1,218 @@
+{
+  "/BrennanResumeStack/Custom::S3AutoDeleteObjectsCustomResourceProvider": [
+    {
+      "type": "aws:cdk:is-custom-resource-handler-customResourceProvider",
+      "data": true
+    }
+  ],
+  "/BrennanResumeStack/AWSCloudFrontPartitionHostedZoneIdMap": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AWSCloudFrontPartitionHostedZoneIdMap"
+    }
+  ],
+  "/BrennanResumeStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C": [
+    {
+      "type": "aws:cdk:is-custom-resource-handler-singleton",
+      "data": true
+    },
+    {
+      "type": "aws:cdk:is-custom-resource-handler-runtime-family",
+      "data": 2
+    }
+  ],
+  "/BrennanResumeStack/VisitsTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "VisitsTable484B1D14"
+      }
+    }
+  ],
+  "/BrennanResumeStack/CloudFrontDomain": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CloudFrontDomain"
+    }
+  ],
+  "/BrennanResumeStack/SiteUrl": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SiteUrl"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitUrl": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitUrl"
+    }
+  ],
+  "/BrennanResumeStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/BrennanResumeStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/BrennanResumeStack/Certificate/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "Certificate4E7ABB08"
+    }
+  ],
+  "/BrennanResumeStack/ResumeBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ResumeBucketD07CCF44"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketAutoDeleteObjects"
+      }
+    }
+  ],
+  "/BrennanResumeStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+    }
+  ],
+  "/BrennanResumeStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+    }
+  ],
+  "/BrennanResumeStack/Distribution/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "Distribution830FAC52"
+    }
+  ],
+  "/BrennanResumeStack/ARecord/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ARecordE7B57761"
+    }
+  ],
+  "/BrennanResumeStack/AaaaRecord/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AaaaRecord61D2056E"
+    }
+  ],
+  "/BrennanResumeStack/WwwRecord/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WwwRecordB30C9252"
+    }
+  ],
+  "/BrennanResumeStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536"
+    }
+  ],
+  "/BrennanResumeStack/VisitsTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VisitsTable484B1D14"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitFn/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitFn79F04E3C"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitFn/invoke-function-url": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitFninvokefunctionurl6AAD05D4"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitFn/invoke-function": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitFninvokefunction16E7B6CC"
+    }
+  ],
+  "/BrennanResumeStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/BrennanResumeStack/ResumeBucket/Policy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ResumeBucketPolicyD6A19716"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketPolicyStatements"
+      }
+    }
+  ],
+  "/BrennanResumeStack/ResumeBucket/AutoDeleteObjectsCustomResource/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ResumeBucketAutoDeleteObjectsCustomResource2D039196"
+    }
+  ],
+  "/BrennanResumeStack/DeployWebsite/AwsCliLayer/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "DeployWebsiteAwsCliLayer17DBC421"
+    }
+  ],
+  "/BrennanResumeStack/DeployWebsite/CustomResource/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "DeployWebsiteCustomResourceD116527B"
+    }
+  ],
+  "/BrennanResumeStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitFn/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitFnServiceRoleEFD9122F"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitFn/FunctionUrl/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitFnFunctionUrl59CFF653"
+    }
+  ],
+  "/BrennanResumeStack/Distribution/Origin1/S3OriginAccessControl/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "DistributionOrigin1S3OriginAccessControlEB606076"
+    }
+  ],
+  "/BrennanResumeStack/Custom::CDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF"
+    }
+  ],
+  "/BrennanResumeStack/LogVisitFn/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogVisitFnServiceRoleDefaultPolicy958F6901"
+    }
+  ]
+}
