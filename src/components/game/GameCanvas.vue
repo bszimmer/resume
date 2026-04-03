@@ -16,7 +16,11 @@ import {
   PLAYER_START_Y,
   PLAYER_WIDTH,
   PLAYER_HEIGHT,
+  START_ZONE,
+  FINISH_ZONE,
+  LEADERBOARD_ZONE,
 } from './levelData'
+import type { SpeedrunZone } from './levelData'
 import {
   resolveFloorCollision,
   getLadderAtBody,
@@ -39,12 +43,21 @@ import {
   drawScanlines,
   drawHUD,
   drawTitle,
+  drawSpeedrunZones,
+  drawSpeedrunHUD,
+  drawConfetti,
 } from './renderer'
+import type { ConfettiParticle } from './renderer'
 import SectionOverlay from '@/components/resume/SectionOverlay.vue'
+import SpeedrunResultModal from './SpeedrunResultModal.vue'
+import SpeedrunPauseModal from './SpeedrunPauseModal.vue'
+import LeaderboardModal from './LeaderboardModal.vue'
 import VirtualControls from './VirtualControls.vue'
+import { useLeaderboardStore } from '@/stores/leaderboard'
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const gameStore = useGameStore()
+const leaderboardStore = useLeaderboardStore()
 const { keys, onEnter, onJump } = useInput()
 
 function triggerEnter() { onEnter.value = true }
@@ -89,8 +102,41 @@ const body: PhysicsBody = {
 }
 
 let nearZone: SectionZone | null = null
+let nearSpeedrunZone: SpeedrunZone | null = null
 // Track the ladder the character is actively climbing so we keep it even when body exits the hitbox
 let activeLadder: Ladder | null = null
+
+// Speedrun timer (plain number, not reactive — updated every tick)
+let runElapsed = 0
+
+// Confetti particles (plain array, not reactive)
+let confettiParticles: ConfettiParticle[] = []
+
+function rectsOverlapBody(
+  b: { x: number; y: number; width: number; height: number },
+  z: { x: number; y: number; width: number; height: number },
+): boolean {
+  return b.x < z.x + z.width && b.x + b.width > z.x && b.y < z.y + z.height && b.y + b.height > z.y
+}
+
+function spawnConfetti() {
+  const colors = ['#44ff88', '#ff6b4a', '#cc88ff', '#ffdd44', '#4a9eff', '#ffffff']
+  confettiParticles = []
+  for (let i = 0; i < 120; i++) {
+    confettiParticles.push({
+      x: Math.random() * CANVAS_WIDTH,
+      y: -10 - Math.random() * 40,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 1 + Math.random() * 2,
+      color: colors[Math.floor(Math.random() * colors.length)] ?? '#ffffff',
+      w: 6 + Math.random() * 4,
+      h: 3 + Math.random() * 3,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.2,
+      life: 3 + Math.random() * 2,
+    })
+  }
+}
 
 function tick(dt: number) {
   if (!ctx) return
@@ -101,8 +147,8 @@ function tick(dt: number) {
     return
   }
 
-  // Pause physics when overlay is open
-  if (gameStore.overlayVisible) {
+  // Pause physics when overlay is open, run is paused, or leaderboard is open
+  if (gameStore.overlayVisible || gameStore.speedrunPaused || leaderboardStore.visible) {
     render()
     return
   }
@@ -198,13 +244,48 @@ function tick(dt: number) {
 
   // Zone detection
   nearZone = getZoneAtBody(body, zones)
+  nearSpeedrunZone = rectsOverlapBody(body, START_ZONE)
+    ? START_ZONE
+    : rectsOverlapBody(body, FINISH_ZONE)
+      ? FINISH_ZONE
+      : rectsOverlapBody(body, LEADERBOARD_ZONE)
+        ? LEADERBOARD_ZONE
+        : null
 
-  // Section activation
+  // Section / speedrun activation
   if (onEnter.value) {
     onEnter.value = false
     if (nearZone) {
       gameStore.openSection(nearZone.id)
+    } else if (nearSpeedrunZone?.kind === 'start' && !gameStore.speedrunActive) {
+      runElapsed = 0
+      gameStore.startRun()
+    } else if (nearSpeedrunZone?.kind === 'leaderboard' && !gameStore.speedrunActive) {
+      leaderboardStore.open()
     }
+  }
+
+  // Accumulate speedrun timer (paused while any overlay is open or run is paused)
+  if (gameStore.speedrunActive && !gameStore.overlayVisible && !gameStore.speedrunResultVisible && !gameStore.speedrunPaused) {
+    runElapsed += dt
+  }
+
+  // Finish detection
+  if (gameStore.speedrunActive && nearSpeedrunZone?.kind === 'finish') {
+    gameStore.finishRun(runElapsed)
+    spawnConfetti()
+  }
+
+  // Update confetti particles
+  if (confettiParticles.length > 0) {
+    for (const p of confettiParticles) {
+      p.vy += 0.08 * dt * 60
+      p.x += p.vx * dt * 60
+      p.y += p.vy * dt * 60
+      p.rotation += p.rotationSpeed * dt * 60
+      p.life -= dt
+    }
+    confettiParticles = confettiParticles.filter((p) => p.life > 0)
   }
 
   const isMoving = body.vx !== 0 || body.onLadder
@@ -226,6 +307,7 @@ function render() {
   drawPlatforms(ctx, platforms)
   drawLadders(ctx, ladders)
   drawSectionZones(ctx, zones, frame)
+  drawSpeedrunZones(ctx, frame, gameStore.speedrunActive)
   drawCharacter(ctx, body, animFrame)
 
   // Reset to screen space for HUD elements (scanlines, title, hints)
@@ -233,6 +315,8 @@ function render() {
   drawScanlines(ctx)
   drawTitle(ctx)
   drawHUD(ctx, nearZone, frame)
+  drawSpeedrunHUD(ctx, nearSpeedrunZone, gameStore.speedrunActive, runElapsed, frame)
+  if (confettiParticles.length > 0) drawConfetti(ctx, confettiParticles)
 }
 
 // CSS scale to fit canvas in viewport while preserving 800×600 aspect ratio
@@ -252,6 +336,26 @@ function updateScale() {
 
 const gameLoop = useGameLoop(tick)
 
+function onEscape(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+  if (gameStore.speedrunActive && !gameStore.speedrunPaused) {
+    e.preventDefault()
+    gameStore.pauseRun()
+  }
+}
+
+function onTab(e: KeyboardEvent) {
+  if (e.key !== 'Tab') return
+  e.preventDefault()
+  if (gameStore.overlayVisible || gameStore.speedrunActive || gameStore.speedrunResultVisible) return
+  leaderboardStore.visible ? leaderboardStore.close() : leaderboardStore.open()
+}
+
+function handleCancelRun() {
+  runElapsed = 0
+  gameStore.cancelRun()
+}
+
 onMounted(() => {
   const canvas = canvasEl.value
   if (!canvas) return
@@ -263,11 +367,15 @@ onMounted(() => {
   initScanlines()
   updateScale()
   window.addEventListener('resize', updateScale)
+  window.addEventListener('keydown', onEscape)
+  window.addEventListener('keydown', onTab)
   gameLoop.start()
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateScale)
+  window.removeEventListener('keydown', onEscape)
+  window.removeEventListener('keydown', onTab)
   gameLoop.stop()
 })
 </script>
@@ -278,6 +386,27 @@ onUnmounted(() => {
     <VirtualControls :keys="keys" :trigger-enter="triggerEnter" :trigger-jump="triggerJump" />
     <Transition name="overlay">
       <SectionOverlay v-if="gameStore.overlayVisible" @close="gameStore.closeSection()" />
+    </Transition>
+    <Transition name="overlay">
+      <SpeedrunResultModal
+        v-if="gameStore.speedrunResultVisible"
+        :elapsed="gameStore.speedrunElapsed"
+        @close="gameStore.closeSpeedrunResult()"
+        @open-leaderboard="leaderboardStore.open()"
+      />
+    </Transition>
+    <Transition name="overlay">
+      <LeaderboardModal
+        v-if="leaderboardStore.visible"
+        @close="leaderboardStore.close()"
+      />
+    </Transition>
+    <Transition name="overlay">
+      <SpeedrunPauseModal
+        v-if="gameStore.speedrunPaused"
+        @resume="gameStore.resumeRun()"
+        @cancel="handleCancelRun()"
+      />
     </Transition>
   </div>
 </template>

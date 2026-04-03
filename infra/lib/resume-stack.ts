@@ -126,6 +126,36 @@ export class ResumeStack extends cdk.Stack {
       },
     })
 
+    // ── 9. DynamoDB table for speedrun leaderboard ───────────────────────────
+    const leaderboardTable = new dynamodb.Table(this, 'LeaderboardTable', {
+      tableName: 'resume-leaderboard',
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    })
+
+    // ── 10. Lambda — leaderboard GET/POST ────────────────────────────────────
+    const leaderboardFn = new lambda.Function(this, 'LeaderboardFn', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'leaderboard.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      environment: {
+        TABLE_NAME: leaderboardTable.tableName,
+      },
+    })
+
+    leaderboardTable.grantReadWriteData(leaderboardFn)
+
+    const leaderboardUrl = leaderboardFn.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: ['https://brennanzimmer.com'],
+        allowedMethods: [lambda.HttpMethod.GET, lambda.HttpMethod.POST],
+        allowedHeaders: ['Content-Type'],
+      },
+    })
+
     // ── Outputs ──────────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'CloudFrontDomain', {
       value: distribution.distributionDomainName,
@@ -139,6 +169,11 @@ export class ResumeStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'LogVisitUrl', {
       value: logVisitUrl.url,
       description: 'Lambda Function URL for logging visits',
+    })
+
+    new cdk.CfnOutput(this, 'LeaderboardUrl', {
+      value: leaderboardUrl.url,
+      description: 'Lambda Function URL for speedrun leaderboard (GET top 10, POST new time)',
     })
   }
 }
