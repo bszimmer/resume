@@ -1,6 +1,19 @@
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './levelData'
-import type { Platform, Ladder, SectionZone } from './levelData'
+import { CANVAS_WIDTH, CANVAS_HEIGHT, START_ZONE, FINISH_ZONE, LEADERBOARD_ZONE } from './levelData'
+import type { Platform, Ladder, SectionZone, SpeedrunZone } from './levelData'
 import type { PhysicsBody } from './physics'
+
+export interface ConfettiParticle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  color: string
+  w: number
+  h: number
+  rotation: number
+  rotationSpeed: number
+  life: number
+}
 
 // Pre-render the scanline overlay to an offscreen canvas (called once at init)
 let scanlineCanvas: HTMLCanvasElement | null = null
@@ -207,10 +220,193 @@ export function drawHUD(
 }
 
 export function drawTitle(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = 'rgba(74, 158, 255, 0.15)'
+  ctx.fillStyle = 'rgba(74, 158, 255, 0.4)'
   ctx.font = '10px "Press Start 2P"'
-  ctx.textAlign = 'center'
-  ctx.fillText('BRENNAN ZIMMER — RESUME', CANVAS_WIDTH / 2, 30)
-  ctx.fillText('USE ARROW KEYS TO MOVE', CANVAS_WIDTH / 2, 48)
   ctx.textAlign = 'left'
+  ctx.fillText('BRENNAN ZIMMER — RESUME', 12, 30)
+  ctx.fillText('USE ARROW KEYS TO MOVE', 12, 48)
+  ctx.fillText('TAB TO OPEN LEADERBOARD', 12, 66)
+}
+
+// Draw start and finish flags standing on their platforms in world-space
+export function drawSpeedrunZones(
+  ctx: CanvasRenderingContext2D,
+  frame: number,
+  speedrunActive: boolean,
+): void {
+  // Flag poles are centered in their respective zones
+  const poleX = START_ZONE.x + START_ZONE.width / 2  // x=400, canvas center
+
+  // ── Start flag (bottom floor, platform surface y=510) ─────────────────────
+  const startBaseY = 510
+  const startPoleTopY = startBaseY - 46
+  const startPulse = 0.5 + 0.5 * Math.sin(frame / 20)
+  const startWave = Math.sin(frame / 10) * 1.5
+
+  // Pole
+  ctx.fillStyle = '#aaaaaa'
+  ctx.fillRect(poleX - 1, startPoleTopY, 3, startBaseY - startPoleTopY)
+
+  // Green triangular pennant with a subtle wave on the tip
+  ctx.fillStyle = `rgba(68, 255, 136, ${0.85 + 0.15 * startPulse})`
+  ctx.beginPath()
+  ctx.moveTo(poleX + 2, startPoleTopY + 2)
+  ctx.lineTo(poleX + 22, startPoleTopY + 9 + startWave)
+  ctx.lineTo(poleX + 2, startPoleTopY + 17)
+  ctx.closePath()
+  ctx.fill()
+
+  // Label above the flag
+  ctx.globalAlpha = 0.7 + 0.3 * startPulse
+  ctx.fillStyle = '#44ff88'
+  ctx.font = '5px "Press Start 2P"'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+  ctx.fillText('START', poleX, startPoleTopY - 3)
+  ctx.globalAlpha = 1
+
+  // ── Finish flag (top floor, platform surface y=100) ────────────────────────
+  const finishBaseY = 100
+  const finishPoleTopY = finishBaseY - 46
+  const finishSpeed = speedrunActive ? 6 : 20
+  const finishPulse = 0.5 + 0.5 * Math.sin(frame / finishSpeed)
+
+  // Pole
+  ctx.fillStyle = '#aaaaaa'
+  ctx.fillRect(poleX - 1, finishPoleTopY, 3, finishBaseY - finishPoleTopY)
+
+  // Checkered flag: 4 cols × 3 rows of 6×6px tiles
+  const tW = 6
+  const tH = 6
+  const fCols = 4
+  const fRows = 3
+  const flagX = poleX + 2
+  const flagY = finishPoleTopY + 2
+  ctx.globalAlpha = 0.85 + 0.15 * finishPulse
+  for (let row = 0; row < fRows; row++) {
+    for (let col = 0; col < fCols; col++) {
+      ctx.fillStyle = (row + col) % 2 === 0 ? '#ffffff' : '#111111'
+      ctx.fillRect(flagX + col * tW, flagY + row * tH, tW, tH)
+    }
+  }
+  ctx.globalAlpha = 1
+
+  // Label above the flag
+  ctx.globalAlpha = 0.7 + 0.3 * finishPulse
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '5px "Press Start 2P"'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+  ctx.fillText('FINISH', poleX, finishPoleTopY - 3)
+  ctx.globalAlpha = 1
+
+  // ── Leaderboard zone (bottom floor, right of START) ──────────────────────
+  const lz = LEADERBOARD_ZONE
+  const lzCenterX = lz.x + lz.width / 2
+  const lzBaseY = 510
+  const lzPoleTopY = lzBaseY - 46
+  const lzPulse = 0.5 + 0.5 * Math.sin(frame / 18 + 1.5) // slightly offset phase from start flag
+
+  // Pole
+  ctx.fillStyle = '#aaaaaa'
+  ctx.fillRect(lzCenterX - 1, lzPoleTopY, 3, lzBaseY - lzPoleTopY)
+
+  // Gold/trophy banner — small rectangular flag with trophy icon
+  const bannerX = lzCenterX + 2
+  const bannerY = lzPoleTopY + 2
+  const bannerW = 22
+  const bannerH = 16
+  ctx.fillStyle = `rgba(255, 200, 40, ${0.75 + 0.25 * lzPulse})`
+  ctx.fillRect(bannerX, bannerY, bannerW, bannerH)
+  ctx.strokeStyle = `rgba(255, 200, 40, ${0.8 + 0.2 * lzPulse})`
+  ctx.lineWidth = 1
+  ctx.strokeRect(bannerX, bannerY, bannerW, bannerH)
+
+  // Tiny trophy shape (cup + base) in dark color on the banner
+  ctx.fillStyle = '#0a0a1a'
+  // Cup body
+  ctx.fillRect(bannerX + 7, bannerY + 2, 8, 6)
+  // Cup handles (left/right bumps)
+  ctx.fillRect(bannerX + 5, bannerY + 3, 2, 3)
+  ctx.fillRect(bannerX + 15, bannerY + 3, 2, 3)
+  // Stem
+  ctx.fillRect(bannerX + 10, bannerY + 8, 2, 3)
+  // Base
+  ctx.fillRect(bannerX + 7, bannerY + 11, 8, 2)
+
+  // "TOP 10" label above the banner
+  ctx.globalAlpha = 0.7 + 0.3 * lzPulse
+  ctx.fillStyle = '#ffc828'
+  ctx.font = '5px "Press Start 2P"'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'bottom'
+  ctx.fillText('TOP 10', lzCenterX, lzPoleTopY - 3)
+  ctx.globalAlpha = 1
+
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+}
+
+function formatRunTime(s: number): string {
+  const mins = Math.floor(s / 60)
+  const secs = Math.floor(s % 60).toString().padStart(2, '0')
+  const cs = Math.floor((s % 1) * 100)
+    .toString()
+    .padStart(2, '0')
+  return `${mins}:${secs}.${cs}`
+}
+
+// Draw speedrun-specific HUD elements in screen-space
+export function drawSpeedrunHUD(
+  ctx: CanvasRenderingContext2D,
+  nearSpeedrunZone: SpeedrunZone | null,
+  speedrunActive: boolean,
+  runElapsed: number,
+  frame: number,
+): void {
+  if (nearSpeedrunZone?.kind === 'start' && !speedrunActive) {
+    const pulse = 0.5 + 0.5 * Math.sin(frame / 15)
+    ctx.globalAlpha = 0.6 + 0.4 * pulse
+    ctx.fillStyle = '#44ff88'
+    ctx.font = '8px "Press Start 2P"'
+    ctx.textAlign = 'center'
+    ctx.fillText('[ PRESS ENTER TO START RUN ]', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 16)
+    ctx.textAlign = 'left'
+    ctx.globalAlpha = 1
+  }
+
+  if (nearSpeedrunZone?.kind === 'leaderboard' && !speedrunActive) {
+    const pulse = 0.5 + 0.5 * Math.sin(frame / 15)
+    ctx.globalAlpha = 0.6 + 0.4 * pulse
+    ctx.fillStyle = '#ffc828'
+    ctx.font = '8px "Press Start 2P"'
+    ctx.textAlign = 'center'
+    ctx.fillText('[ PRESS ENTER TO VIEW LEADERBOARD ]', CANVAS_WIDTH / 2, CANVAS_HEIGHT - 16)
+    ctx.textAlign = 'left'
+    ctx.globalAlpha = 1
+  }
+
+  if (speedrunActive) {
+    ctx.fillStyle = '#44ff88'
+    ctx.font = '8px "Press Start 2P"'
+    ctx.textAlign = 'right'
+    ctx.fillText(`RUN: ${formatRunTime(runElapsed)}`, CANVAS_WIDTH - 12, 20)
+    ctx.textAlign = 'left'
+  }
+}
+
+// Draw confetti particles in screen-space
+export function drawConfetti(
+  ctx: CanvasRenderingContext2D,
+  particles: readonly ConfettiParticle[],
+): void {
+  for (const p of particles) {
+    ctx.save()
+    ctx.globalAlpha = Math.min(1, p.life)
+    ctx.translate(p.x + p.w / 2, p.y + p.h / 2)
+    ctx.rotate(p.rotation)
+    ctx.fillStyle = p.color
+    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+    ctx.restore()
+  }
 }

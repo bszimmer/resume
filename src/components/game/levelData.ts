@@ -95,3 +95,18 @@ export const PLAYER_START_X = 60
 export const PLAYER_START_Y = 482
 export const PLAYER_WIDTH = 20
 export const PLAYER_HEIGHT = 28
+
+export interface SpeedrunZone {
+  x: number
+  y: number
+  width: number
+  height: number
+  kind: 'start' | 'finish' | 'leaderboard'
+}
+
+// Center of bottom floor (platform y=510); x range [370,430] — clear of ABOUT [40,200]
+export const START_ZONE: SpeedrunZone = { x: 370, y: 474, width: 60, height: 36, kind: 'start' }
+// Center of top floor (platform y=100); x range [370,430] — clear of SKILLS [580,740]
+export const FINISH_ZONE: SpeedrunZone = { x: 370, y: 64, width: 60, height: 36, kind: 'finish' }
+// Right of START on the bottom floor; x range [480,540] — well clear of START [370,430]
+export const LEADERBOARD_ZONE: SpeedrunZone = { x: 480, y: 474, width: 60, height: 36, kind: 'leaderboard' }
