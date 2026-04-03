@@ -26,7 +26,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
       <button class="close-btn" @click="emit('close')">[ ESC ]</button>
       <div class="panel-content">
         <p class="title">LEADERBOARD</p>
-        <p class="sub">TOP 10 FASTEST RUNS</p>
+        <p class="sub">TOP 10 FASTEST PLAYERS</p>
 
         <div v-if="store.loading" class="state-msg">LOADING...</div>
         <div v-else-if="store.error" class="state-msg error">{{ store.error }}</div>
