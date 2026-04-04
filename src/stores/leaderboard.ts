@@ -119,9 +119,10 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
     }
   }
 
+  fetchEntries()
+
   function open() {
     visible.value = true
-    fetchEntries()
   }
 
   function close() {
