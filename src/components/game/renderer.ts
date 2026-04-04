@@ -260,9 +260,9 @@ export function drawSpeedrunZones(
   ctx.globalAlpha = 0.7 + 0.3 * startPulse
   ctx.fillStyle = '#44ff88'
   ctx.font = '5px "Press Start 2P"'
-  ctx.textAlign = 'center'
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'bottom'
-  ctx.fillText('START', poleX, startPoleTopY - 3)
+  ctx.fillText('START', poleX - 1, startPoleTopY - 3)
   ctx.globalAlpha = 1
 
   // ── Finish flag (top floor, platform surface y=100) ────────────────────────
@@ -295,9 +295,9 @@ export function drawSpeedrunZones(
   ctx.globalAlpha = 0.7 + 0.3 * finishPulse
   ctx.fillStyle = '#ffffff'
   ctx.font = '5px "Press Start 2P"'
-  ctx.textAlign = 'center'
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'bottom'
-  ctx.fillText('FINISH', poleX, finishPoleTopY - 3)
+  ctx.fillText('FINISH', poleX - 1, finishPoleTopY - 3)
   ctx.globalAlpha = 1
 
   // ── Leaderboard zone (bottom floor, right of START) ──────────────────────
@@ -338,9 +338,9 @@ export function drawSpeedrunZones(
   ctx.globalAlpha = 0.7 + 0.3 * lzPulse
   ctx.fillStyle = '#ffc828'
   ctx.font = '5px "Press Start 2P"'
-  ctx.textAlign = 'center'
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'bottom'
-  ctx.fillText('TOP 10', lzCenterX, lzPoleTopY - 3)
+  ctx.fillText('TOP 10', lzCenterX - 1, lzPoleTopY - 3)
   ctx.globalAlpha = 1
 
   ctx.textAlign = 'left'
