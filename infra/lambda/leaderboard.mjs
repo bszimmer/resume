@@ -1,10 +1,20 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb'
 import { ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb'
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm'
 
 const client = DynamoDBDocumentClient.from(new DynamoDBClient())
+const ssmClient = new SSMClient()
 const TABLE = process.env.TABLE_NAME
 const PK = 'LEADERBOARD'
+
+let turnstileSecret
+{
+  const { Parameter } = await ssmClient.send(
+    new GetParameterCommand({ Name: process.env.TURNSTILE_SECRET_PARAM, WithDecryption: true }),
+  )
+  turnstileSecret = Parameter.Value
+}
 
 const HEADERS = { 'Content-Type': 'application/json' }
 
@@ -35,7 +45,19 @@ export const handler = async (event) => {
     } catch {
       return { statusCode: 400, headers: HEADERS, body: JSON.stringify({ error: 'Invalid JSON' }) }
     }
-    const { time, name, company, playerId } = body
+    const { time, name, company, playerId, turnstileToken } = body
+    if (!turnstileToken) {
+      return { statusCode: 403, headers: HEADERS, body: JSON.stringify({ error: 'Missing verification token' }) }
+    }
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret: turnstileSecret, response: turnstileToken }),
+    })
+    const verifyData = await verifyRes.json()
+    if (!verifyData.success) {
+      return { statusCode: 403, headers: HEADERS, body: JSON.stringify({ error: 'Verification failed' }) }
+    }
     if (typeof time !== 'number' || !name?.trim() || !playerId?.trim()) {
       return {
         statusCode: 400,

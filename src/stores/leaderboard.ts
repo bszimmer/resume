@@ -2,6 +2,29 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 const LEADERBOARD_URL = 'https://lta42uukgjauydrno2tinyx3ji0adhim.lambda-url.us-east-1.on.aws/'
+const TURNSTILE_SITE_KEY = '0x4AAAAAAC0YtiTEOmDDNacA'
+
+let _turnstileWidgetId: string | null = null
+
+function getTurnstileToken(): Promise<string> {
+  const container = document.getElementById('turnstile-container')
+  if (!container) return Promise.reject(new Error('Turnstile container not found'))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ts = (window as any).turnstile
+  if (!ts) return Promise.reject(new Error('Turnstile not loaded'))
+  if (_turnstileWidgetId !== null) {
+    ts.remove(_turnstileWidgetId)
+    _turnstileWidgetId = null
+  }
+  return new Promise((resolve, reject) => {
+    _turnstileWidgetId = ts.render(container, {
+      sitekey: TURNSTILE_SITE_KEY,
+      size: 'invisible',
+      callback: (token: string) => resolve(token),
+      'error-callback': () => reject(new Error('Turnstile challenge failed')),
+    })
+  })
+}
 
 export interface LeaderboardEntry {
   time: number
@@ -84,10 +107,11 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
   async function submitTime(time: number, name: string, company: string): Promise<boolean> {
     if (!LEADERBOARD_URL) return false
     try {
+      const turnstileToken = await getTurnstileToken()
       const res = await fetch(LEADERBOARD_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ time, name, company, playerId }),
+        body: JSON.stringify({ time, name, company, playerId, turnstileToken }),
       })
       return res.ok
     } catch {

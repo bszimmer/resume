@@ -97,36 +97,7 @@ export class ResumeStack extends cdk.Stack {
       distributionPaths: ['/*'],
     })
 
-    // ── 7. DynamoDB table for visit logs ─────────────────────────────────────
-    const visitsTable = new dynamodb.Table(this, 'VisitsTable', {
-      tableName: 'resume-visits',
-      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
-    })
-
-    // ── 8. Lambda — log visit to DynamoDB ────────────────────────────────────
-    const logVisitFn = new lambda.Function(this, 'LogVisitFn', {
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'log-visit.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
-      environment: {
-        TABLE_NAME: visitsTable.tableName,
-      },
-    })
-
-    visitsTable.grantWriteData(logVisitFn)
-
-    const logVisitUrl = logVisitFn.addFunctionUrl({
-      authType: lambda.FunctionUrlAuthType.NONE,
-      cors: {
-        allowedOrigins: ['https://brennanzimmer.com'],
-        allowedMethods: [lambda.HttpMethod.POST],
-        allowedHeaders: ['Content-Type'],
-      },
-    })
-
-    // ── 9. DynamoDB table for speedrun leaderboard ───────────────────────────
+    // ── 7. DynamoDB table for speedrun leaderboard ───────────────────────────
     const leaderboardTable = new dynamodb.Table(this, 'LeaderboardTable', {
       tableName: 'resume-leaderboard',
       partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
@@ -142,10 +113,20 @@ export class ResumeStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
       environment: {
         TABLE_NAME: leaderboardTable.tableName,
+        TURNSTILE_SECRET_PARAM: '/resume/turnstile-secret',
       },
     })
 
     leaderboardTable.grantReadWriteData(leaderboardFn)
+
+    leaderboardFn.addToRolePolicy(
+      new cdk.aws_iam.PolicyStatement({
+        actions: ['ssm:GetParameter'],
+        resources: [
+          `arn:aws:ssm:${this.region}:${this.account}:parameter/resume/turnstile-secret`,
+        ],
+      }),
+    )
 
     const leaderboardUrl = leaderboardFn.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
@@ -166,10 +147,6 @@ export class ResumeStack extends cdk.Stack {
       value: `https://${domainName}`,
     })
 
-    new cdk.CfnOutput(this, 'LogVisitUrl', {
-      value: logVisitUrl.url,
-      description: 'Lambda Function URL for logging visits',
-    })
 
     new cdk.CfnOutput(this, 'LeaderboardUrl', {
       value: leaderboardUrl.url,
